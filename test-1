@@ -1,0 +1,205 @@
+def findKthNextGreaterElement(prices, k):
+    n = len(prices)
+    ans = [-1] * n
+    stacks = [[] for _ in range(k)]
+
+    for i, p in enumerate(prices):
+        for j in range(k - 1, -1, -1):
+            while stacks[j] and prices[stacks[j][-1]] < p:
+                idx = stacks[j].pop()
+
+                if j == k - 1:
+                    ans[idx] = i + 1
+                else:
+                    stacks[j + 1].append(idx)
+
+        stacks[0].append(i)
+
+    return ans
+
+prices = [1, 4, 2, 5, 3]
+k = 2
+Expected output [3, -1, 5, -1, -1]
+
+
+
+
+
+def calculate_drawdown(rets, n):
+   # Calculate cumulative portfolio values
+   values = [1.0]
+   for r in rets:
+       values.append(values[-1] * (1 + r))
+
+   def find_max_drawdown(start, end):
+       peak = values[start]
+       peak_idx = start
+       best_dd = 0
+       best_start = -1
+       best_end = -1
+
+       for i in range(start + 1, end + 1):
+           dd = values[i] / peak - 1
+
+           if dd < best_dd:
+               best_dd = dd
+               best_start = peak_idx
+               best_end = i
+
+           if values[i] > peak:
+               peak = values[i]
+               peak_idx = i
+
+       return best_dd, best_start, best_end
+
+   drawdowns = []
+
+   def search(start, end):
+       dd, peak_idx, trough_idx = find_max_drawdown(
+           start, end
+       )
+
+       if peak_idx == -1:
+           return
+
+       drawdowns.append(dd)
+
+       # Search before the largest drawdown
+       search(start, peak_idx)
+
+       # Search after the largest drawdown
+       search(trough_idx, end)
+
+   search(0, len(rets))
+
+   drawdowns.sort()
+
+   if n > len(drawdowns):
+       return len(drawdowns)
+
+   return round(drawdowns[n - 1], 4)
+
+
+
+
+
+
+def calculate_drawdown(rets, n):
+   values = [1.0]
+   for r in rets:
+       values.append(values[-1] * (1 + r))
+
+   m = len(values)
+   size = 1
+   while size < m:
+       size *= 2
+
+   tree = [None] * (2 * size)
+
+   def merge(a, b):
+       if a is None:
+           return b
+       if b is None:
+           return a
+
+       # Each node stores:
+       # (maximum, minimum, largest drawdown)
+
+       mx = a[0] if a[0][0] >= b[0][0] else b[0]
+       mn = a[1] if a[1][0] <= b[1][0] else b[1]
+
+       # Drawdown crossing both segments
+       cross = (
+           b[1][0] / a[0][0],
+           a[0][1],
+           b[1][1]
+       )
+
+       best = min(
+           (a[2], b[2], cross),
+           key=lambda x: (x[0], x[2], x[1])
+       )
+
+       return mx, mn, best
+
+   # Build segment tree
+   for i, v in enumerate(values):
+       tree[size + i] = (
+           (v, i),
+           (v, i),
+           (1.0, -1, -1)
+       )
+
+   for i in range(size - 1, 0, -1):
+       tree[i] = merge(tree[2 * i], tree[2 * i + 1])
+
+   def find_max_drawdown(start, end):
+       l = start + size
+       r = end + size + 1
+
+       left = None
+       right = None
+
+       while l < r:
+           if l & 1:
+               left = merge(left, tree[l])
+               l += 1
+
+           if r & 1:
+               r -= 1
+               right = merge(tree[r], right)
+
+           l //= 2
+           r //= 2
+
+       ratio, peak, trough = merge(left, right)[2]
+
+       if ratio >= 1:
+           return 0, -1, -1
+
+       return ratio - 1, peak, trough
+
+
+
+   drawdowns = []
+
+   # Iterative version of original recursion
+   stack = [(0, m - 1)]
+
+   while stack:
+       start, end = stack.pop()
+
+       if start >= end:
+           continue
+
+       dd, peak, trough = find_max_drawdown(start, end)
+
+       if peak == -1:
+           continue
+
+       drawdowns.append(dd)
+
+       # Search left and right
+       stack.append((start, peak))
+       stack.append((trough, end))
+
+   drawdowns.sort()
+
+   if n < 1 or n > len(drawdowns):
+       return len(drawdowns)
+
+   return round(drawdowns[n - 1], 4)
+
+
+
+
+
+rets = [
+   0.01, 0.02, 0.03, -0.01, -0.02,
+   0.04, 0.05, -0.01, -0.02, 0.03
+]
+
+print(calculate_drawdown(rets, 1))
+print(calculate_drawdown(rets, 2))
+print(calculate_drawdown(rets, 3))
+
