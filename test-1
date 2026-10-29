@@ -1,4 +1,804 @@
 test
+
+1
+Design a time-based key-value data structure that can store multiple values for the same key at
+different time stamps and retrieve the key's value at a certain timestamp.
+Implement the TimeMap class:
+●
+●
+TimeMap() Initializes the object of the data structure.
+void set(String key, String value, int timestamp) Stores the key key with the value value at
+the given time timestamp.
+●
+String get(String key, int timestamp) Returns a value such that set was called previously, with
+timestamp_prev <= timestamp. If there are multiple such values, it returns the value
+associated with the largest timestamp_prev. If there are no values, it returns "".
+Example 1:
+Input
+["TimeMap", "set", "get", "get", "set", "get", "get"]
+[[], ["foo", "bar", 1], ["foo", 1], ["foo", 3], ["foo", "bar2", 4], ["foo", 4], ["foo", 5]]
+Output
+[null, null, "bar", "bar", null, "bar2", "bar2"]
+Explanation
+TimeMap timeMap = new TimeMap();
+timeMap.set("foo", "bar", 1); // store the key "foo" and value "bar" along with timestamp = 1.
+timeMap.get("foo", 1); // return "bar"
+timeMap.get("foo", 3); // return "bar", since there is no value corresponding to foo at timestamp
+3 and timestamp 2, then the only value is at timestamp 1 is "bar".
+timeMap.set("foo", "bar2", 4); // store the key "foo" and value "bar2" along with timestamp = 4.
+timeMap.get("foo", 4); // return "bar2"
+timeMap.get("foo", 5); // return "bar2"
+Constraints:
+●
+1 <= key.length, value.length <= 100
+●
+key and value consist of lowercase English letters and digits.
+●
+1 <= timestamp <= 107
+●
+All the timestamps timestamp of set are strictly increasing.
+●
+At most 2 * 105 calls will be made to set and get.
+class TimeMap:
+def __init__(self):
+self.key_time_map = {}
+def set(self, key: str, value: str, timestamp: int) -> None:
+# If the 'key' does not exist in dictionary.
+if not key in self.key_time_map:
+self.key_time_map[key] = []
+# Store '(timestamp, value)' pair in 'key' bucket.
+self.key_time_map[key].append([ timestamp, value ])
+def get(self, key: str, timestamp: int) -> str:
+# If the 'key' does not exist in dictionary we will return empty string.
+if not key in self.key_time_map:
+return ""
+if timestamp < self.key_time_map[key][0][0]:
+return ""
+left = 0
+right = len(self.key_time_map[key])
+while left < right:
+mid = (left + right) // 2
+if self.key_time_map[key][mid][0] <= timestamp:
+left = mid + 1
+else:
+right = mid
+# If iterator points to first element it means, no time <= timestamp exists.
+return "" if right == 0 else self.key_time_map[key][right - 1][1]
+2
+Design and implement a data structure for a Least Frequently Used (LFU) cache.
+Implement the LFUCache class:
+●
+●
+●
+LFUCache(int capacity) Initializes the object with the capacity of the data structure.
+int get(int key) Gets the value of the key if the key exists in the cache. Otherwise, returns -1.
+void put(int key, int value) Update the value of the key if present, or inserts the key if not
+already present. When the cache reaches its capacity, it should invalidate and remove the
+least frequently used key before inserting a new item. For this problem, when there is a tie
+(i.e., two or more keys with the same frequency), the least recently used key would be
+invalidated.
+To determine the least frequently used key, a use counter is maintained for each key in the cache.
+The key with the smallest use counter is the least frequently used key.
+When a key is first inserted into the cache, its use counter is set to 1 (due to the put operation). The
+use counter for a key in the cache is incremented either a get or put operation is called on it.
+The functions get and put must each run in O(1)average time complexity.
+Example 1:
+Input
+["LFUCache", "put", "put", "get", "put", "get", "get", "put", "get", "get", "get"]
+[[2], [1, 1], [2, 2], [1], [3, 3], [2], [3], [4, 4], [1], [3], [4]]
+Output
+[null, null, null, 1, null, -1, 3, null, -1, 3, 4]
+Explanation
+// cnt(x) = the use counter for key x
+// cache=[] will show the last used order for tiebreakers (leftmost element is most recent)
+LFUCache lfu = new LFUCache(2);
+lfu.put(1, 1); // cache=[1,_], cnt(1)=1
+lfu.put(2, 2); // cache=[2,1], cnt(2)=1, cnt(1)=1
+lfu.get(1); // return 1
+// cache=[1,2], cnt(2)=1, cnt(1)=2
+lfu.put(3, 3); // 2 is the LFU key because cnt(2)=1 is the smallest, invalidate 2.
+// cache=[3,1], cnt(3)=1, cnt(1)=2
+lfu.get(2); // return -1 (not found)
+lfu.get(3); // return 3
+// cache=[3,1], cnt(3)=2, cnt(1)=2
+lfu.put(4, 4); // Both 1 and 3 have the same cnt, but 1 is LRU, invalidate 1.
+// cache=[4,3], cnt(4)=1, cnt(3)=2
+lfu.get(1); // return -1 (not found)
+lfu.get(3); // return 3
+// cache=[3,4], cnt(4)=1, cnt(3)=3
+lfu.get(4); // return 4
+// cache=[4,3], cnt(4)=2, cnt(3)=3
+Constraints:
+●
+1 <= capacity <= 104
+●
+0 <= key <= 105
+●
+0 <= value <= 109
+●
+At most 2 * 105 calls will be made to get and put.
+import collections
+class Node:
+def __init__(self, key, val):
+self.key = key
+self.val = val
+self.freq = 1
+self.prev = self.next = None
+class DLinkedList:
+""" An implementation of doubly linked list.
+Two APIs provided:
+append(node): append the node to the head of the linked list.
+pop(node=None): remove the referenced node.
+If None is given, remove the one from tail, which is the least recently used.
+Both operation, apparently, are in O(1) complexity.
+"""
+def __init__(self):
+self._sentinel = Node(None, None) # dummy node
+self._sentinel.next = self._sentinel.prev = self._sentinel
+self._size = 0
+def __len__(self):
+return self._size
+def append(self, node):
+node.next = self._sentinel.next
+node.prev = self._sentinel
+node.next.prev = node
+self._sentinel.next = node
+self._size += 1
+def pop(self, node=None):
+if self._size == 0:
+return
+if not node:
+node = self._sentinel.prev
+node.prev.next = node.next
+node.next.prev = node.prev
+self._size -= 1
+return node
+class LFUCache:
+def __init__(self, capacity):
+"""
+:type capacity: int
+Three things to maintain:
+1. a dict, named as `self._node`, for the reference of all nodes given key.
+That is, O(1) time to retrieve node given a key.
+2. Each frequency has a doubly linked list, store in `self._freq`, where key
+is the frequency, and value is an object of `DLinkedList`
+3. The min frequency through all nodes. We can maintain this in O(1) time, taking
+advantage of the fact that the frequency can only increment by 1. Use the following
+two rules:
+Rule 1: Whenever we see the size of the DLinkedList of current min frequency is 0,
+the min frequency must increment by 1.
+Rule 2: Whenever put in a new (key, value), the min frequency must 1 (the new node)
+"""
+self._size = 0
+self._capacity = capacity
+self._node = dict() # key: Node
+self._freq = collections.defaultdict(DLinkedList)
+self._minfreq = 0
+def _update(self, node):
+"""
+This is a helper function that used in the following two cases:
+1. when `get(key)` is called; and
+2. when `put(key, value)` is called and the key exists.
+The common point of these two cases is that:
+1. no new node comes in, and
+2. the node is visited one more times -> node.freq changed ->
+thus the place of this node will change
+The logic of this function is:
+1. pop the node from the old DLinkedList (with freq `f`)
+2. append the node to new DLinkedList (with freq `f+1`)
+3. if old DlinkedList has size 0 and self._minfreq is `f`,
+update self._minfreq to `f+1`
+All of the above opeartions took O(1) time.
+"""
+freq = node.freq
+self._freq[freq].pop(node)
+if self._minfreq == freq and not self._freq[freq]:
+self._minfreq += 1
+node.freq += 1
+freq = node.freq
+self._freq[freq].append(node)
+def get(self, key):
+"""
+Through checking self._node[key], we can get the node in O(1) time.
+Just performs self._update, then we can return the value of node.
+:type key: int
+:rtype: int
+"""
+if key not in self._node:
+return -1
+node = self._node[key]
+self._update(node)
+return node.val
+def put(self, key, value):
+"""
+If `key` already exists in self._node, we do the same operations as `get`, except
+updating the node.val to new value.
+Otherwise, the following logic will be performed
+1. if the cache reaches its capacity, pop the least frequently used item. (*)
+2. add new node to self._node
+3. add new node to the DLinkedList with frequency 1
+4. reset self._minfreq to 1
+(*) How to pop the least frequently used item? Two facts:
+1. we maintain the self._minfreq, the minimum possible frequency in cache.
+2. All cache with the same frequency are stored as a DLinkedList, with
+recently used order (Always append at head)
+Consequence? ==> The tail of the DLinkedList with self._minfreq is the least
+recently used one, pop it...
+:type key: int
+:type value: int
+:rtype: void
+"""
+if self._capacity == 0:
+return
+if key in self._node:
+node = self._node[key]
+self._update(node)
+node.val = value
+else:
+if self._size == self._capacity:
+node = self._freq[self._minfreq].pop()
+del self._node[node.key]
+self._size -= 1
+node = Node(key, value)
+self._node[key] = node
+self._freq[1].append(node)
+self._minfreq = 1
+self._size += 1
+3
+You have a queue of integers, you need to retrieve the first unique integer in the queue.
+Implement the FirstUnique class:
+●
+●
+FirstUnique(int[] nums) Initializes the object with the numbers in the queue.
+int showFirstUnique() returns the value of the first unique integer of the queue, and returns
+-1 if there is no such integer.
+●
+void add(int value) insert value to the queue.
+Example 1:
+Input:
+["FirstUnique","showFirstUnique","add","showFirstUnique","add","showFirstUnique","add","showFirst
+Unique"]
+[[[2,3,5]],[],[5],[],[2],[],[3],[]]
+Output:
+[null,2,null,2,null,3,null,-1]
+Explanation:
+FirstUnique firstUnique = new FirstUnique([2,3,5]);
+firstUnique.showFirstUnique(); // return 2
+firstUnique.add(5); // the queue is now [2,3,5,5]
+firstUnique.showFirstUnique(); // return 2
+firstUnique.add(2); // the queue is now [2,3,5,5,2]
+firstUnique.showFirstUnique(); // return 3
+firstUnique.add(3); // the queue is now [2,3,5,5,2,3]
+firstUnique.showFirstUnique(); // return -1
+Example 2:
+Input:
+["FirstUnique","showFirstUnique","add","add","add","add","add","showFirstUnique"]
+[[[7,7,7,7,7,7]],[],[7],[3],[3],[7],[17],[]]
+Output:
+[null,-1,null,null,null,null,null,17]
+Explanation:
+FirstUnique firstUnique = new FirstUnique([7,7,7,7,7,7]);
+firstUnique.showFirstUnique(); // return -1
+firstUnique.add(7); // the queue is now [7,7,7,7,7,7,7]
+firstUnique.add(3); // the queue is now [7,7,7,7,7,7,7,3]
+firstUnique.add(3); // the queue is now [7,7,7,7,7,7,7,3,3]
+firstUnique.add(7); // the queue is now [7,7,7,7,7,7,7,3,3,7]
+firstUnique.add(17); // the queue is now [7,7,7,7,7,7,7,3,3,7,17]
+firstUnique.showFirstUnique(); // return 17
+Example 3:
+Input:
+["FirstUnique","showFirstUnique","add","showFirstUnique"]
+[[[809]],[],[809],[]]
+Output:
+[null,809,null,-1]
+Explanation:
+FirstUnique firstUnique = new FirstUnique([809]);
+firstUnique.showFirstUnique(); // return 809
+firstUnique.add(809); // the queue is now [809,809]
+firstUnique.showFirstUnique(); // return -1
+Constraints:
+●
+●
+●
+●
+1 <= nums.length <= 10^5
+1 <= nums[i] <= 10^8
+1 <= value <= 10^8
+At most 50000 calls will be made to showFirstUnique and add.
+# In Python, we have to make do with the OrderedDict class. We can use it as a Set by setting
+# the values to None.
+from collections import OrderedDict
+class FirstUnique:
+def __init__(self, nums: List[int]):
+self._queue = OrderedDict()
+self._is_unique = {}
+for num in nums:
+# Notice that we're calling the "add" method of FirstUnique; not of the queue.
+self.add(num)
+def showFirstUnique(self) -> int:
+# Check if there is still a value left in the queue. There might be no uniques.
+if self._queue:
+# We don't want to actually *remove* the value.
+# Seeing as OrderedDict has no "get first" method, the way that we can get
+# the first value is to create an iterator, and then get the "next" value
+# from that. Note that this is O(1).
+return next(iter(self._queue))
+return -1
+def add(self, value: int) -> None:
+# Case 1: We need to add the number to the queue and mark it as unique.
+if value not in self._is_unique:
+self._is_unique[value] = True
+self._queue[value] = None
+# Case 2: We need to mark the value as no longer unique and then
+# remove it from the queue.
+elif self._is_unique[value]:
+self._is_unique[value] = False
+self._queue.pop(value)
+# Case 3: We don't need to do anything; the number was removed from the queue
+# the second time it occurred.
+4
+Constraints:
+●
+1 <= capacity <= 3000
+●
+0 <= key <= 104
+●
+0 <= value <= 105
+●
+At most 2 * 105 calls will be made to get and put.
+class ListNode:
+def __init__(self, key, val):
+self.key = key
+self.val = val
+self.next = None
+self.prev = None
+class LRUCache:
+def __init__(self, capacity: int):
+self.capacity = capacity
+self.dic = {}
+self.head = ListNode(-1, -1)
+self.tail = ListNode(-1, -1)
+self.head.next = self.tail
+self.tail.prev = self.head
+def get(self, key: int) -> int:
+if key not in self.dic:
+return -1
+node = self.dic[key]
+self.remove(node)
+self.add(node)
+return node.val
+def put(self, key: int, value: int) -> None:
+if key in self.dic:
+old_node = self.dic[key]
+self.remove(old_node)
+node = ListNode(key, value)
+self.dic[key] = node
+self.add(node)
+if len(self.dic) > self.capacity:
+node_to_delete = self.head.next
+self.remove(node_to_delete)
+del self.dic[node_to_delete.key]
+def add(self, node):
+previous_end = self.tail.prev
+previous_end.next = node
+node.prev = previous_end
+node.next = self.tail
+self.tail.prev = node
+def remove(self, node):
+node.prev.next = node.next
+node.next.prev = node.prev
+# Your LRUCache object will be instantiated and called as such:
+# obj = LRUCache(capacity)
+# param_1 = obj.get(key)
+# obj.put(key,value)
+5
+The median is the middle value in an ordered integer list. If the size of the list is even, there is no
+middle value, and the median is the mean of the two middle values.
+●
+●
+For example, for arr = [2,3,4], the median is 3.
+For example, for arr = [2,3], the median is (2 + 3) / 2 = 2.5.
+Implement the MedianFinder class:
+●
+●
+MedianFinder() initializes the MedianFinderobject.
+void addNum(int num) adds the integer num from the data stream to the data structure.
+●
+double findMedian() returns the median of all elements so far. Answers within 10-5 of the
+actual answer will be accepted.
+Example 1:
+Input
+["MedianFinder", "addNum", "addNum", "findMedian", "addNum", "findMedian"]
+[[], [1], [2], [], [3], []]
+Output
+[null, null, null, 1.5, null, 2.0]
+Explanation
+MedianFinder medianFinder = new MedianFinder();
+medianFinder.addNum(1); // arr = [1]
+medianFinder.addNum(2); // arr = [1, 2]
+medianFinder.findMedian(); // return 1.5 (i.e., (1 + 2) / 2)
+medianFinder.addNum(3); // arr[1, 2, 3]
+medianFinder.findMedian(); // return 2.0
+Constraints:
+●
+●
+-105 <= num <= 105
+There will be at least one element in the data structure before calling findMedian.
+●
+At most 5 * 104 calls will be made to addNum and findMedian.
+Follow up:
+●
+If all integer numbers from the stream are in the range [0, 100], how would you optimize your
+solution?
+●
+If 99% of all integer numbers from the stream are in the range [0, 100], how would you
+optimize your solution?
+from sortedcontainers import SortedList
+class MedianFinder:
+def __init__(self):
+self.arr = SortedList()
+def addNum(self, num: int) -> None:
+self.arr.add(num)
+def findMedian(self) -> float:
+n = len(self.arr)
+if n % 2 == 1:
+return self.arr[n//2]
+return (self.arr[n//2] + self.arr[n//2-1]) / 2
+6
+Design a hit counter which counts the number of hits received in the past 5 minutes (i.e., the past
+300seconds).
+Your system should accept a timestamp parameter (in seconds granularity), and you may assume
+that calls are being made to the system in chronological order (i.e., timestamp is monotonically
+increasing). Several hits may arrive roughly at the same time.
+Implement the HitCounter class:
+●
+HitCounter() Initializes the object of the hit counter system.
+●
+void hit(int timestamp) Records a hit that happened at timestamp (in seconds). Several hits
+may happen at the same timestamp.
+●
+int getHits(int timestamp) Returns the number of hits in the past 5 minutes from timestamp
+(i.e., the past 300 seconds).
+Example 1:
+Input
+["HitCounter", "hit", "hit", "hit", "getHits", "hit", "getHits", "getHits"]
+[[], [1], [2], [3], [4], [300], [300], [301]]
+Output
+[null, null, null, null, 3, null, 4, 3]
+Explanation
+HitCounter hitCounter = new HitCounter();
+hitCounter.hit(1); // hit at timestamp 1.
+hitCounter.hit(2); // hit at timestamp 2.
+hitCounter.hit(3); // hit at timestamp 3.
+hitCounter.getHits(4); // get hits at timestamp 4, return 3.
+hitCounter.hit(300); // hit at timestamp 300.
+hitCounter.getHits(300); // get hits at timestamp 300, return 4.
+hitCounter.getHits(301); // get hits at timestamp 301, return 3.
+Constraints:
+●
+●
+1 <= timestamp <= 2 * 109
+All the calls are being made to the system in chronological order (i.e., timestamp is
+monotonically increasing).
+●
+At most 300 calls will be made to hit and getHits.
+Follow up: What if the number of hits per second could be huge? Does your design scale?
+class HitCounter(object):
+def __init__(self):
+"""
+Initialize your data structure here.
+"""
+self.counter = [[0,i+1] for i in range(300)]
+return
+def hit(self, timestamp):
+"""
+Record a hit.
+@param timestamp - The current timestamp (in seconds granularity).
+:type timestamp: int
+:rtype: void
+"""
+# ts = 301 means (301-1)%300
+idx = int((timestamp - 1)%300)
+if self.counter[idx][1] == timestamp:
+self.counter[idx][0] += 1
+else:
+self.counter[idx][0] = 1
+self.counter[idx][1] = timestamp
+def getHits(self, timestamp):
+"""
+Return the number of hits in the past 5 minutes.
+@param timestamp - The current timestamp (in seconds granularity).
+:type timestamp: int
+:rtype: int
+"""
+cnt = 0
+for x in self.counter:
+c,t = x[0],x[1]
+if timestamp - t < 300:
+cnt += c
+return cnt
+7
+You are given a stream of records about a particular stock. Each record contains a timestamp and
+the corresponding price of the stock at that timestamp.
+Unfortunately due to the volatile nature of the stock market, the records do not come in order. Even
+worse, some records may be incorrect. Another record with the same timestamp may appear later in
+the stream correcting the price of the previous wrong record.
+Design an algorithm that:
+●
+Updates the price of the stock at a particular timestamp, correcting the price from any
+previous records at the timestamp.
+●
+Finds the latest price of the stock based on the current records. The latest price is the price
+at the latest timestamp recorded.
+●
+Finds the maximum price the stock has been based on the current records.
+●
+Finds the minimum price the stock has been based on the current records.
+Implement the StockPrice class:
+●
+StockPrice() Initializes the object with no price records.
+●
+void update(int timestamp, int price)Updates the price of the stock at the given timestamp.
+●
+int current() Returns the latest price of the stock.
+●
+int maximum() Returns the maximum price of the stock.
+●
+int minimum() Returns the minimum price of the stock.
+Example 1:
+Input
+["StockPrice", "update", "update", "current", "maximum", "update", "maximum", "update", "minimum"]
+[[], [1, 10], [2, 5], [], [], [1, 3], [], [4, 2], []]
+Output
+[null, null, null, 5, 10, null, 5, null, 2]
+Explanation
+StockPrice stockPrice = new StockPrice();
+stockPrice.update(1, 10); // Timestamps are [1] with corresponding prices [10].
+stockPrice.update(2, 5); // Timestamps are [1,2] with corresponding prices [10,5].
+stockPrice.current(); // return 5, the latest timestamp is 2 with the price being 5.
+stockPrice.maximum(); // return 10, the maximum price is 10 at timestamp 1.
+stockPrice.update(1, 3); // The previous timestamp 1 had the wrong price, so it is updated to 3.
+// Timestamps are [1,2] with corresponding prices [3,5].
+stockPrice.maximum(); // return 5, the maximum price is 5 after the correction.
+stockPrice.update(4, 2); // Timestamps are [1,2,4] with corresponding prices [3,5,2].
+stockPrice.minimum(); // return 2, the minimum price is 2 at timestamp 4.
+Constraints:
+●
+1 <= timestamp, price <= 109
+●
+●
+At most 105 calls will be made in total to update, current, maximum, and minimum.
+current, maximum, and minimum will be called only after update has been called at least
+once.
+class StockPrice:
+def __init__(self):
+self.latest_time = 0
+# Store price of each stock at each timestamp.
+self.timestamp_price_map = {}
+# Store stock prices in sorted order to get min and max price.
+self.max_heap = []
+self.min_heap = []
+def update(self, timestamp: int, price: int) -> None:
+# Update latestTime to latest timestamp.
+self.timestamp_price_map[timestamp] = price
+self.latest_time = max(self.latest_time, timestamp)
+# Add latest price for timestamp.
+heappush(self.min_heap, (price, timestamp))
+heappush(self.max_heap, (-price, timestamp))
+def current(self) -> int:
+# Return latest price of the stock.
+return self.timestamp_price_map[self.latest_time]
+def maximum(self) -> int:
+price, timestamp = self.max_heap[0]
+# Pop pairs from heap with the price doesn't match with hashmap.
+while -price != self.timestamp_price_map[timestamp]:
+heappop(self.max_heap)
+price, timestamp = self.max_heap[0]
+return -price
+def minimum(self) -> int:
+price, timestamp = self.min_heap[0]
+# Pop pairs from heap with the price doesn't match with hashmap.
+while price != self.timestamp_price_map[timestamp]:
+heappop(self.min_heap)
+price, timestamp = self.min_heap[0]
+return price
+8
+An underground railway system is keeping track of customer travel times between different stations.
+They are using this data to calculate the average time it takes to travel from one station to another.
+Implement the UndergroundSystem class:
+●
+void checkIn(int id, string stationName, int t)
+○
+A customer with a card ID equal to id, checks in at the station stationName at time t.
+○
+A customer can only be checked into one place at a time.
+●
+void checkOut(int id, string stationName, int t)
+○
+A customer with a card ID equal to id, checks out from the station stationName at
+time t.
+●
+double getAverageTime(string startStation, string endStation)
+○
+Returns the average time it takes to travel from startStation to endStation.
+○
+The average time is computed from all the previous traveling times from
+startStationto endStation that happened directly, meaning a check in at startStation
+followed by a check out from endStation.
+○
+The time it takes to travel from startStationto endStation may be different from the
+time it takes to travel from endStation to startStation.
+○
+There will be at least one customer that has traveled from startStation to
+endStationbefore getAverageTime is called.
+You may assume all calls to the checkIn and checkOutmethods are consistent. If a customer checks
+in at time t1 then checks out at time t2, then t1 < t2. All events happen in chronological order.
+Example 1:
+Input
+["UndergroundSystem","checkIn","checkIn","checkIn","checkOut","checkOut","checkOut","getAverag
+eTime","getAverageTime","checkIn","getAverageTime","checkOut","getAverageTime"]
+[[],[45,"Leyton",3],[32,"Paradise",8],[27,"Leyton",10],[45,"Waterloo",15],[27,"Waterloo",20],[32,"Cambr
+idge",22],["Paradise","Cambridge"],["Leyton","Waterloo"],[10,"Leyton",24],["Leyton","Waterloo"],[10,"
+Waterloo",38],["Leyton","Waterloo"]]
+Output
+[null,null,null,null,null,null,null,14.00000,11.00000,null,11.00000,null,12.00000]
+Explanation
+UndergroundSystem undergroundSystem = new UndergroundSystem();
+undergroundSystem.checkIn(45, "Leyton", 3);
+undergroundSystem.checkIn(32, "Paradise", 8);
+undergroundSystem.checkIn(27, "Leyton", 10);
+undergroundSystem.checkOut(45, "Waterloo", 15); // Customer 45 "Leyton" -> "Waterloo" in 15-3 =
+12
+undergroundSystem.checkOut(27, "Waterloo", 20); // Customer 27 "Leyton" -> "Waterloo" in 20-10 =
+10
+undergroundSystem.checkOut(32, "Cambridge", 22); // Customer 32 "Paradise" -> "Cambridge" in
+22-8 = 14
+undergroundSystem.getAverageTime("Paradise", "Cambridge"); // return 14.00000. One trip
+"Paradise" -> "Cambridge", (14) / 1 = 14
+undergroundSystem.getAverageTime("Leyton", "Waterloo"); // return 11.00000. Two trips "Leyton"
+-> "Waterloo", (10 + 12) / 2 = 11
+undergroundSystem.checkIn(10, "Leyton", 24);
+undergroundSystem.getAverageTime("Leyton", "Waterloo"); // return 11.00000
+undergroundSystem.checkOut(10, "Waterloo", 38); // Customer 10 "Leyton" -> "Waterloo" in 38-24 =
+14
+undergroundSystem.getAverageTime("Leyton", "Waterloo"); // return 12.00000. Three trips
+"Leyton" -> "Waterloo", (10 + 12 + 14) / 3 = 12
+Example 2:
+Input
+["UndergroundSystem","checkIn","checkOut","getAverageTime","checkIn","checkOut","getAverageTi
+me","checkIn","checkOut","getAverageTime"]
+[[],[10,"Leyton",3],[10,"Paradise",8],["Leyton","Paradise"],[5,"Leyton",10],[5,"Paradise",16],["Leyton","
+Paradise"],[2,"Leyton",21],[2,"Paradise",30],["Leyton","Paradise"]]
+Output
+[null,null,null,5.00000,null,null,5.50000,null,null,6.66667]
+Explanation
+UndergroundSystem undergroundSystem = new UndergroundSystem();
+undergroundSystem.checkIn(10, "Leyton", 3);
+undergroundSystem.checkOut(10, "Paradise", 8); // Customer 10 "Leyton" -> "Paradise" in 8-3 = 5
+undergroundSystem.getAverageTime("Leyton", "Paradise"); // return 5.00000, (5) / 1 = 5
+undergroundSystem.checkIn(5, "Leyton", 10);
+undergroundSystem.checkOut(5, "Paradise", 16); // Customer 5 "Leyton" -> "Paradise" in 16-10 = 6
+undergroundSystem.getAverageTime("Leyton", "Paradise"); // return 5.50000, (5 + 6) / 2 = 5.5
+undergroundSystem.checkIn(2, "Leyton", 21);
+undergroundSystem.checkOut(2, "Paradise", 30); // Customer 2 "Leyton" -> "Paradise" in 30-21 = 9
+undergroundSystem.getAverageTime("Leyton", "Paradise"); // return 6.66667, (5 + 6 + 9) / 3 =
+6.66667
+Constraints:
+●
+●
+●
+●
+1 <= id, t <= 106
+1 <= stationName.length, startStation.length, endStation.length <= 10
+All strings consist of uppercase and lowercase English letters and digits.
+There will be at most 2 * 104 calls in total to checkIn, checkOut, and getAverageTime.
+●
+Answers within 10-5 of the actual value will be accepted.
+class UndergroundSystem:
+def __init__(self):
+self.check_in_data = {}
+self.journey_data = collections.defaultdict(lambda : [0, 0])
+def checkIn(self, id: int, stationName: str, t: int) -> None:
+self.check_in_data[id] = [stationName, t]
+def checkOut(self, id: int, end_station: str, t: int) -> None:
+# Access and remove the data for id. Note that removing it is actually
+# optional, but we'll discuss the benefits of it in the space complexity
+# analysis section.
+start_station, start_time = self.check_in_data.pop(id)
+self.journey_data[(start_station, end_station)][0] += (t - start_time)
+self.journey_data[(start_station, end_station)][1] += 1
+def getAverageTime(self, start_station: str, end_station: str) -> float:
+total_time, total_trips = self.journey_data[(start_station, end_station)]
+# The average is simply the total divided by the number of trips.
+return total_time / total_trips
+9
+A ride sharing system manages ride requests from riders and availability from drivers. Riders
+request rides, and drivers become available over time. The system should match riders and drivers
+in the order they arrive.
+Implement the RideSharingSystem class:
+●
+RideSharingSystem() Initializes the system.
+●
+void addRider(int riderId) Adds a new rider with the given riderId.
+●
+void addDriver(int driverId) Adds a new driver with the given driverId.
+●
+int[] matchDriverWithRider() Matches the earliest available driver with the earliest waiting
+rider and removes both of them from the system. Returns an integer array of size 2 where
+result = [driverId, riderId] if a match is made. If no match is available, returns [-1, -1].
+●
+void cancelRider(int riderId) Cancels the ride request of the rider with the given riderId if the
+rider exists and has not yet been matched.
+Example 1:
+Input:
+["RideSharingSystem", "addRider", "addDriver", "addRider", "matchDriverWithRider", "addDriver",
+"cancelRider", "matchDriverWithRider", "matchDriverWithRider"]
+[[], [3], [2], [1], [], [5], [3], [], []]
+Output:
+[null, null, null, null, [2, 3], null, null, [5, 1], [-1, -1]]
+Explanation
+RideSharingSystem rideSharingSystem = new RideSharingSystem(); // Initializes the system
+rideSharingSystem.addRider(3); // rider 3 joins the queue
+rideSharingSystem.addDriver(2); // driver 2 joins the queue
+rideSharingSystem.addRider(1); // rider 1 joins the queue
+rideSharingSystem.matchDriverWithRider(); // returns [2, 3]
+rideSharingSystem.addDriver(5); // driver 5 becomes available
+rideSharingSystem.cancelRider(3); // rider 3 is already matched, cancel has no effect
+rideSharingSystem.matchDriverWithRider(); // returns [5, 1]
+rideSharingSystem.matchDriverWithRider(); // returns [-1, -1]
+Example 2:
+Input:
+["RideSharingSystem", "addRider", "addDriver", "addDriver", "matchDriverWithRider", "addRider",
+"cancelRider", "matchDriverWithRider"]
+[[], [8], [8], [6], [], [2], [2], []]
+Output:
+[null, null, null, null, [8, 8], null, null, [-1, -1]]
+Explanation
+RideSharingSystem rideSharingSystem = new RideSharingSystem(); // Initializes the system
+rideSharingSystem.addRider(8); // rider 8 joins the queue
+rideSharingSystem.addDriver(8); // driver 8 joins the queue
+rideSharingSystem.addDriver(6); // driver 6 joins the queue
+rideSharingSystem.matchDriverWithRider(); // returns [8, 8]
+rideSharingSystem.addRider(2); // rider 2 joins the queue
+rideSharingSystem.cancelRider(2); // rider 2 cancels
+rideSharingSystem.matchDriverWithRider(); // returns [-1, -1]
+Constraints:
+●
+●
+●
+●
+1 <= riderId, driverId <= 1000
+Each riderId is unique among riders and is added at most once.
+Each driverId is unique among drivers and is added at most once.
+At most 1000 calls will be made in total to addRider , addDriver, matchDriverWithRider, and
+cancelRider.
+class RideSharingSystem:
+def __init__(self):
+self.drivers = deque()
+self.riders = deque()
+self.waiting = set()
+self.cancelled = set()
+def addRider(self, riderId: int) -> None:
+self.riders.append(riderId)
+self.waiting.add(riderId)
+def addDriver(self, driverId: int) -> None:
+self.drivers.append(driverId)
+def matchDriverWithRider(self) -> List[int]:
+while self.riders and self.riders[0] in self.cancelled:
+rid = self.riders.popleft()
+self.cancelled.remove(rid)
+self.waiting.remove(rid)
+if self.riders and self.drivers:
+did = self.drivers.popleft()
+rid = self.riders.popleft()
+self.waiting.remove(rid)
+return [did, rid]
+return [-1, -1]
+def cancelRider(self, riderId: int) -> None:
+if riderId in self.waiting:
+self.cancelled.add(riderId
+
+
 Binary search
 Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.
 The overall run time complexity should be O(log (m+n)).
