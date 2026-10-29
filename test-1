@@ -1,3 +1,405 @@
+test
+Binary search
+Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.
+The overall run time complexity should be O(log (m+n)).
+Example 1:
+Input: nums1 = [1,3], nums2 = [2]
+Output: 2.00000
+Explanation: merged array = [1,2,3] and median is 2.
+class Solution:
+   def findMedianSortedArrays(self, nums1: List[int], nums2: List[int]) -> float:
+       def helper(n, left1, right1, left2, right2):
+           if left1 >= right1:
+               return nums2[left2 + n]
+           if left2 >= right2:
+               return nums1[left1 + n]
+           if n == 0:
+               return min(nums1[left1], nums2[left2])
+           else:
+               mid1 = (left1 + right1) // 2
+               mid2 = (left2 + right2) // 2
+               if mid1 - left1 + mid2 - left2 >= n:
+                   if nums1[mid1] < nums2[mid2]:
+                       return helper(n, left1, right1, left2, mid2)
+                   else:
+                       return helper(n, left1, mid1, left2, right2)
+               else:
+                   if nums1[mid1] < nums2[mid2]:
+                       n_next = n - mid1 + left1 - 1
+                       return helper(n_next, mid1 + 1, right1, left2, right2)
+                   else:
+                       n_next = n - mid2 + left2 - 1
+                       return helper(n_next, left1, right1, mid2 + 1, right2)
+       mid = (len(nums1) + len(nums2)) // 2
+       midvalue1 = helper(mid - 1, 0, len(nums1), 0, len(nums2))
+       midvalue2 = helper(mid, 0, len(nums1), 0, len(nums2))
+       if (len(nums1) + len(nums2)) % 2:
+           return midvalue2
+       return (midvalue1 + midvalue2) / 2
+The frequency of an element is the number of times it occurs in an array.
+You are given an integer array nums and an integer k. In one operation, you can choose an index of nums and increment the element at that index by 1.
+Return the maximum possible frequency of an element after performing at most k operations.
+Example 1:
+Input: nums = [1,2,4], k = 5
+Output: 3
+Explanation: Increment the first element three times and the second element two times to make nums = [4,4,4].
+4 has a frequency of 3.
+class Solution:
+    def maxFrequency(self, nums: List[int], k: int) -> int:
+        nums.sort()
+        left = 0
+        ans = 0
+        curr = 0
+       
+        for right in range(len(nums)):
+            target = nums[right]
+            curr += target
+           
+            while (right - left + 1) * target - curr > k:
+                curr -= nums[left]
+                left += 1
+           
+            ans = max(ans, right - left + 1)
+        return ans
+dfs
+Number of islands
+Given an m x n 2D binary grid grid which represents a map of '1's (land) and '0's (water), return the number of islands.
+An island is surrounded by water and is formed by connecting adjacent lands horizontally or vertically. You may assume all four edges of the grid are all surrounded by water.
+class Solution:
+   def numIslands(self, grid: List[List[str]]) -> int:
+       def dfs(grid, i, j):
+           if i<0 or j<0 or i>=len(grid) or j>=len(grid[i]) or grid[i][j]!="1":
+               return
+           grid[i][j] = "0"
+           dfs(grid, i-1, j)
+           dfs(grid, i+1, j)
+           dfs(grid, i, j-1)
+           dfs(grid, i, j+1)
+       if not grid:
+           return 0
+       ans = 0
+       for i in range(len(grid)):
+           for j in range(len(grid[i])):
+               if grid[i][j] == "1":
+                   ans += 1
+                   dfs(grid, i, j)
+       return ans
+Word search
+Given an m x n grid of characters board and a string word, return true if word exists in the grid.
+The word can be constructed from letters of sequentially adjacent cells, where adjacent cells are horizontally or vertically neighboring. The same letter cell may not be used more than once.
+class Solution:
+   def exist(self, board: List[List[str]], word: str) -> bool:
+       def dfs(i, j, k):
+           nonlocal board
+           if k == len(word):
+               return True
+           if i >= 0 and i < len(board) and j >= 0 and j < len(board[0]):
+               if board[i][j] == word[k]:
+                   board[i][j] = '*'
+                   left = dfs(i, j - 1, k + 1)
+                   right = dfs(i, j + 1, k + 1)
+                   up = dfs(i - 1, j, k + 1)
+                   down = dfs(i + 1, j, k + 1)
+                   board[i][j] = word[k]
+                   if left or right or up or down:
+                       return True
+           return False
+       for i in range(len(board)):
+           for j in range(len(board[0])):
+               if dfs(i, j, 0):
+                   return True
+       return False
+
+sorting
+Merge intervals
+Given an array of intervals where intervals[i] = [starti, endi], merge all overlapping intervals, and return an array of the non-overlapping intervals that cover all the intervals in the input.
+
+class Solution:
+   def merge(self, intervals: List[List[int]]) -> List[List[int]]:
+       intervals.sort(key=lambda x:x[0])
+       merged = []
+       for interval in intervals:
+           if not merged or merged[-1][1] < interval[0]:
+               merged.append(interval)
+           else:
+               merged[-1][1] = max(merged[-1][1], interval[1])
+       return merged
+3sum
+Given an integer array nums, return all the triplets [nums[i], nums[j], nums[k]] such that i != j, i != k, and j != k, and nums[i] + nums[j] + nums[k] == 0.
+Notice that the solution set must not contain duplicate triplets.
+class Solution:
+   def threeSum(self, nums: list[int]) -> list[list[int]]:
+       res, dups = set(), set()
+       seen = {}
+       for i, val1 in enumerate(nums):
+           if val1 not in dups:
+               dups.add(val1)
+               for j, val2 in enumerate(nums[i + 1 :]):
+                   complement = -val1 - val2
+                   if complement in seen and seen[complement] == i:
+                       res.add(tuple(sorted((val1, val2, complement))))
+                   seen[val2] = i
+       return [list(x) for x in res]
+Greedy
+Container with most water
+You are given an integer array height of length n. There are n vertical lines drawn such that the two endpoints of the ith line are (i, 0) and (i, height[i]).
+Find two lines that together with the x-axis form a container, such that the container contains the most water.
+Return the maximum amount of water a container can store.
+Notice that you may not slant the container.
+Input: height = [1,8,6,2,5,4,8,3,7]
+Output: 49
+Explanation: The above vertical lines are represented by array [1,8,6,2,5,4,8,3,7]. In this case, the max area of water (blue section) the container can contain is 49.
+class Solution:
+   def maxArea(self, height: List[int]) -> int:
+       start, end = 0, len(height) - 1
+       area = 0
+       while start < end:
+           area = max(area, min(height[start], height[end]) * (end - start))
+           if height[start] <= height[end]:
+               start += 1
+           else:
+               end -= 1
+       return area
+Split array largest sum
+Given an integer array nums and an integer k, split nums into k non-empty subarrays such that the largest sum of any subarray is minimized.
+Return the minimized largest sum of the split.
+A subarray is a contiguous part of the array.
+Input: nums = [7,2,5,10,8], k = 2
+Output: 18
+Explanation: There are four ways to split nums into two subarrays.
+The best way is to split it into [7,2,5] and [10,8], where the largest sum among the two subarrays is only 18.
+class Solution:
+   def splitArray(self, nums: List[int], k: int) -> int:
+       n = len(nums)
+     
+       # Create a prefix sum array of nums.
+       prefix_sum = [0] + list(itertools.accumulate(nums))
+       print(prefix_sum)
+     
+       @functools.lru_cache(None)
+       def get_min_largest_split_sum(curr_index: int, subarray_count: int):
+           # Base Case: If there is only one subarray left, then all of the remaining numbers
+           # must go in the current subarray. So return the sum of the remaining numbers.
+           if subarray_count == 1:
+               return prefix_sum[n] - prefix_sum[curr_index]
+     
+           # Otherwise, use the recurrence relation to determine the minimum largest subarray sum
+           # between curr_index and the end of the array with subarray_count subarrays remaining.
+           minimum_largest_split_sum = prefix_sum[n]
+           for i in range(curr_index, n - subarray_count + 1):
+               # Store the sum of the first subarray.
+               first_split_sum = prefix_sum[i + 1] - prefix_sum[curr_index]
+               # Find the maximum subarray sum for the current first split.
+               largest_split_sum = max(first_split_sum,
+                                       get_min_largest_split_sum(i + 1, subarray_count - 1))
+               # Find the minimum among all possible combinations.
+               minimum_largest_split_sum = min(minimum_largest_split_sum, largest_split_sum)
+               if first_split_sum >= minimum_largest_split_sum:
+                   break
+         
+           return minimum_largest_split_sum
+     
+       return get_min_largest_split_sum(0, k)
+Hash
+Given a string s and an integer k, return the length of the longest substring of s that contains at most k distinct characters.
+Example 1:
+Input: s = "eceba", k = 2
+Output: 3
+Explanation: The substring is "ece" with length 3.
+class Solution:
+   def lengthOfLongestSubstringKDistinct(self, s: str, k: int) -> int:
+       n = len(s)
+       max_size = 0
+       counter = collections.Counter()
+     
+       left = 0
+       for right in range(n):
+           counter[s[right]] += 1
+         
+           while len(counter) > k:
+               counter[s[left]] -= 1
+               if counter[s[left]] == 0:
+                   del counter[s[left]]
+               left += 1
+         
+           max_size = max(max_size, right - left + 1)
+                 
+       return max_size
+Sliding window median
+The median is the middle value in an ordered integer list. If the size of the list is even, there is no middle value. So the median is the mean of the two middle values.
+For examples, if arr = [2,3,4], the median is 3.
+For examples, if arr = [1,2,3,4], the median is (2 + 3) / 2 = 2.5.
+You are given an integer array nums and an integer k. There is a sliding window of size k which is moving from the very left of the array to the very right. You can only see the k numbers in the window. Each time the sliding window moves right by one position.
+Return the median array for each window in the original array. Answers within 10-5 of the actual value will be accepted.
+Example 1:
+Input: nums = [1,3,-1,-3,5,3,6,7], k = 3
+Output: [1.00000,-1.00000,-1.00000,3.00000,5.00000,6.00000]
+Explanation: 
+Window position                Median
+---------------                -----
+[1  3  -1] -3  5  3  6  7        1
+ 1 [3  -1  -3] 5  3  6  7       -1
+ 1  3 [-1  -3  5] 3  6  7       -1
+ 1  3  -1 [-3  5  3] 6  7        3
+ 1  3  -1  -3 [5  3  6] 7        5
+ 1  3  -1  -3  5 [3  6  7]       6
+from sortedcontainers import SortedList
+class Solution:
+   def medianSlidingWindow(self, nums: List[int], k: int) -> List[float]:
+       m=len(nums)
+       res=[]
+       l=SortedList()
+       for i in range(k):
+           l.add(nums[i])
+       def get_median(l):
+           if k%2==1:
+               return l[k//2]
+           else:
+               return (l[k//2 -1] + l[k//2])/2
+     
+       res.append(get_median(l))
+       left=0
+       for right in range(k,m):
+           l.add(nums[right])
+           while right-left+1 > k:
+               l.remove(nums[left])
+               left+=1
+         
+           res.append(get_median(l))
+       return res
+LRU cache
+Design a data structure that follows the constraints of a Least Recently Used (LRU) cache.
+Implement the LRUCache class:
+LRUCache(int capacity) Initialize the LRU cache with positive size capacity.
+int get(int key) Return the value of the key if the key exists, otherwise return -1.
+void put(int key, int value) Update the value of the key if the key exists. Otherwise, add the key-value pair to the cache. If the number of keys exceeds the capacity from this operation, evict the least recently used key.
+The functions get and put must each run in O(1) average time complexity.
+Example 1:
+Input
+["LRUCache", "put", "put", "get", "put", "get", "put", "get", "get", "get"]
+[[2], [1, 1], [2, 2], [1], [3, 3], [2], [4, 4], [1], [3], [4]]
+Output
+[null, null, null, 1, null, -1, null, -1, 3, 4]
+Explanation
+LRUCache lRUCache = new LRUCache(2);
+lRUCache.put(1, 1); // cache is {1=1}
+lRUCache.put(2, 2); // cache is {1=1, 2=2}
+lRUCache.get(1);    // return 1
+lRUCache.put(3, 3); // LRU key was 2, evicts key 2, cache is {1=1, 3=3}
+lRUCache.get(2);    // returns -1 (not found)
+lRUCache.put(4, 4); // LRU key was 1, evicts key 1, cache is {4=4, 3=3}
+lRUCache.get(1);    // return -1 (not found)
+lRUCache.get(3);    // return 3
+lRUCache.get(4);    // return 4
+class LRUCache:
+   def __init__(self, capacity: int):
+       self.capacity = capacity
+       self.keys = []
+       self.cache = {}
+   def get(self, key: int) -> int:
+       if key in self.cache:
+           self.keys.remove(key)
+           self.keys.append(key)
+           return self.cache[key]
+       else:
+           return -1
+ 
+   def put(self, key: int, value: int) -> None:
+       if key in self.cache:
+           self.cache[key] = value
+           self.keys.remove(key)
+           self.keys.append(key)
+           return
+       if len(self.keys) == self.capacity:
+           key_remove = self.keys.pop(0)
+           del self.cache[key_remove]
+       self.cache[key] = value
+       self.keys.append(key)
+# Your LRUCache object will be instantiated and called as such:
+# obj = LRUCache(capacity)
+# param_1 = obj.get(key)
+# obj.put(key,value)
+Linked list
+You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.
+You may assume the two numbers do not contain any leading zero, except the number 0 itself.
+Input: l1 = [2,4,3], l2 = [5,6,4]
+Output: [7,0,8]
+Explanation: 342 + 465 = 807.
+class Solution:
+    def addTwoNumbers(
+        self, l1: Optional[ListNode], l2: Optional[ListNode]
+    ) -> Optional[ListNode]:
+        dummyHead = ListNode(0)
+        curr = dummyHead
+        carry = 0
+        while l1 != None or l2 != None or carry != 0:
+            l1Val = l1.val if l1 else 0
+            l2Val = l2.val if l2 else 0
+            columnSum = l1Val + l2Val + carry
+            carry = columnSum // 10
+            newNode = ListNode(columnSum % 10)
+            curr.next = newNode
+            curr = newNode
+            l1 = l1.next if l1 else None
+            l2 = l2.next if l2 else None
+        return dummyHead.next
+Two pointer
+Given a string s, return the longest palindromic substring in s.
+Example 1:
+Input: s = "babad"
+Output: "bab"
+Explanation: "aba" is also a valid answer.
+class Solution:
+    def longestPalindrome(self, s: str) -> str:
+        if len(s) < 2:
+            return s
+       
+        def expand(s:str,left:int,right:int):
+            while left >= 0 and right < len(s) and s[left]==s[right]:
+                left -= 1
+                right += 1
+            return left+1,right-1
+       
+        start = 0
+        end = 0
+        for i in range(len(s)):
+            left1,right1 = expand(s, i, i)
+            left2,right2 = expand(s, i, i+1)
+            if right1 - left1 > end - start:
+                start, end = left1, right1
+            if right2 - left2 > end - start:
+                start, end = left2, right2
+       
+        return s[start:end+1]
+math
+Add strings
+Given two non-negative integers, num1 and num2 represented as string, return the sum of num1 and num2 as a string.
+You must solve the problem without using any built-in library for handling large integers (such as BigInteger). You must also not convert the inputs to integers directly.
+ Example 1:
+Input: num1 = "11", num2 = "123"
+Output: "134"
+class Solution:
+    def addStrings(self, num1: str, num2: str) -> str:
+        res = []
+        carry = 0
+        p1 = len(num1) - 1
+        p2 = len(num2) - 1
+        while p1 >= 0 or p2 >= 0:
+            x1 = ord(num1[p1]) - ord('0') if p1 >= 0 else 0
+            x2 = ord(num2[p2]) - ord('0') if p2 >= 0 else 0
+            value = (x1 + x2 + carry) % 10
+            carry = (x1 + x2 + carry) // 10
+            res.append(value)
+            p1 -= 1
+            p2 -= 1
+       
+        if carry:
+            res.append(carry)
+       
+        return ''.join(str(x) for x in res[::-1])
+
+
+
 def findKthNextGreaterElement(prices, k):
     n = len(prices)
     ans = [-1] * n
